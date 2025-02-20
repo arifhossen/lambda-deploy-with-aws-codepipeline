@@ -5,16 +5,19 @@ phases:
     runtime-versions:
       python: 3.8
     commands:
-      - echo Installing dependencies...
       - pip install -r requirements.txt -t .
   build:
     commands:
-      - echo Packaging Lambda function...
       - zip -r lambda_function.zip .
+      - echo "Uploading to S3..."
+      - aws s3 cp lambda_function.zip s3://devops-automation-infra/lambda-artifacts/lambda_function.zip
   post_build:
     commands:
-      - echo Uploading to S3...
-      - aws s3 cp lambda_function.zip s3://devops-automation-infra/lambda-artifacts/lambda_function.zip
+      - echo "Creating deployment..."
+      - aws deploy create-deployment \
+        --application-name LambdaDeploymentApp \
+        --deployment-group-name LambdaDeploymentGroup \
+        --s3-location bucket=devops-automation-infra,key=lambda-artifacts/lambda_function.zip,bundleType=zip
 artifacts:
   files:
     - lambda_function.zip
